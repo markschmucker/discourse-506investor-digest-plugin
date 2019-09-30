@@ -24,6 +24,9 @@ after_initialize {
         custom_digest = CustomDigest.new(user, connection)
         custom_digest.special_post = special_post
         custom_digest.deliver
+        
+        user.last_emailed_at = Time.now
+        user.save
 
         sleep 3
       end
