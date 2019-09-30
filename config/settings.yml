@@ -1,0 +1,3 @@
+plugins:
+  custom_digest_special_post:
+    default: 0

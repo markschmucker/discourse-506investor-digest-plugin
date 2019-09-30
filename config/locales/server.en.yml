@@ -1,0 +1,3 @@
+en:
+  site_settings:
+    custom_digest_special_post: "Post included in every JSON request (set 0 to disable)"
