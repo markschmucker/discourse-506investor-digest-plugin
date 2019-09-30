@@ -71,7 +71,7 @@ after_initialize {
     end
 
     def activity
-      @since ||= @user.last_emailed_at || 1.month.ago
+      @since ||= (@user.last_emailed_at || 1.month.ago)
 
       topics = Topic
         .joins(:posts)
