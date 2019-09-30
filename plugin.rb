@@ -1,7 +1,7 @@
 # name: custom-digest
 # about: Custom digest
 # authors: Muhlis Budi Cahyono (muhlisbc@gmail.com)
-# version: 0.1.0
+# version: 0.1.1
 
 after_initialize {
   class ::Jobs::EnqueueDigestEmails
@@ -12,24 +12,26 @@ after_initialize {
 
       return if users.blank?
 
-      connection = CustomDigest.create_connection
-      special_post = nil
-      special_post_id = SiteSetting.custom_digest_special_post.to_i
+      DistributedMutex.synchronize("custom_digest") {
+        connection = CustomDigest.create_connection
+        special_post = nil
+        special_post_id = SiteSetting.custom_digest_special_post.to_i
 
-      if special_post_id > 0
-        special_post = Post.find_by(id: special_post_id)
-      end
+        if special_post_id > 0
+          special_post = Post.find_by(id: special_post_id)
+        end
 
-      users.each do |user|
-        custom_digest = CustomDigest.new(user, connection)
-        custom_digest.special_post = special_post
-        custom_digest.deliver
-        
-        user.last_emailed_at = Time.now
-        user.save
+        users.each do |user|
+          custom_digest = CustomDigest.new(user, connection)
+          custom_digest.special_post = special_post
+          custom_digest.deliver
 
-        sleep 3
-      end
+          user.last_emailed_at = Time.now
+          user.save
+
+          sleep 3
+        end
+      }
     end
 
     def target_user_ids
@@ -64,7 +66,7 @@ after_initialize {
     def initialize(user, connection = nil)
       @user = user
       @connection = connection || CustomDigest.create_connection
-      @since = @user.last_emailed_at || 1.month.ago
+      @since = Time.now - (@user.user_option.digest_after_minutes * 60)
     end
 
     def deliver
