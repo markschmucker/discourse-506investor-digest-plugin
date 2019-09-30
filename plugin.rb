@@ -64,6 +64,7 @@ after_initialize {
     def initialize(user, connection = nil)
       @user = user
       @connection = connection || CustomDigest.create_connection
+      @since = @user.last_emailed_at || 1.month.ago
     end
 
     def deliver
@@ -71,7 +72,7 @@ after_initialize {
     end
 
     def activity
-      @since ||= (@user.last_emailed_at || 1.month.ago)
+      #@since ||= (@user.last_emailed_at || 1.month.ago)
 
       topics = Topic
         .joins(:posts)
