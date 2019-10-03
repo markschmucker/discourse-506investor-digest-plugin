@@ -1,7 +1,7 @@
 # name: custom-digest
 # about: Custom digest
 # authors: Muhlis Budi Cahyono (muhlisbc@gmail.com)
-# version: 0.1.1
+# version: 0.1.2
 
 after_initialize {
   class ::Jobs::EnqueueDigestEmails
@@ -26,7 +26,7 @@ after_initialize {
           custom_digest.special_post = special_post
           custom_digest.deliver
 
-          user.last_emailed_at = Time.now
+          user.last_digest_at = Time.now
           user.save
 
           sleep 3
@@ -43,7 +43,7 @@ after_initialize {
         .joins(:user_option, :user_stat)
         .where("user_options.email_digests")
         .where("user_stats.bounce_score < #{SiteSetting.bounce_score_threshold}")
-        .where("COALESCE(last_emailed_at, '2010-01-01') <= CURRENT_TIMESTAMP - ('1 MINUTE'::INTERVAL * user_options.digest_after_minutes)")
+        .where("COALESCE(last_digest_at, '2010-01-01') <= CURRENT_TIMESTAMP - ('1 MINUTE'::INTERVAL * user_options.digest_after_minutes)")
 
       # If the site requires approval, make sure the user is approved
       query = query.where("approved OR moderator OR admin") if SiteSetting.must_approve_users?
