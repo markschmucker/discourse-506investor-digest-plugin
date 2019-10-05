@@ -29,7 +29,7 @@ after_initialize {
           # Align to night in US. The second email will be a non-standard interval,
           # but will remain standard after that.
           lda = Time.now
-          if @user.user_option.digest_after_minutes >= 1440
+          if user.user_option.digest_after_minutes >= 1440
             lda = Time.new(lda.year, lda.month, lda.day, 8, 0, 0)
           end
           user.last_digest_at = lda
