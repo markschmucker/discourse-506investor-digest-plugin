@@ -12,7 +12,7 @@ after_initialize {
 
       return if users.blank?
 
-      DistributedMutex.synchronize("custom_digest", validity: 120.minutes) {
+      DistributedMutex.synchronize("custom_digest", validity: 180.minutes) {
         connection = CustomDigest.create_connection
         special_post = nil
         special_post_id = SiteSetting.custom_digest_special_post.to_i
