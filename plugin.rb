@@ -8,11 +8,10 @@ after_initialize {
     def execute(args)
       return if SiteSetting.disable_digest_emails? || SiteSetting.private_email?
 
-      users = User.where(id: target_user_ids)
-
-      return if users.blank?
-
       DistributedMutex.synchronize("custom_digest", validity: 180.minutes) {
+        users = User.where(id: target_user_ids)
+        return if users.blank?
+        
         connection = CustomDigest.create_connection
         special_post = nil
         special_post_id = SiteSetting.custom_digest_special_post.to_i
