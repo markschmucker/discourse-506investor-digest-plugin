@@ -13,16 +13,23 @@ after_initialize {
         return if users.blank?
         
         connection = CustomDigest.create_connection
+        
         special_post = nil
         special_post_id = SiteSetting.custom_digest_special_post.to_i
-
         if special_post_id > 0
           special_post = Post.find_by(id: special_post_id)
+        end
+
+        favorite_post = nil
+        favorite_post_id = SiteSetting.favorite_post.to_i
+        if favorite_post_id > 0
+          favorite_post = Post.find_by(id: favorite_post_id)
         end
 
         users.each do |user|
           custom_digest = CustomDigest.new(user, connection)
           custom_digest.special_post = special_post
+          custom_digest.favorite_post = favorite_post
           custom_digest.deliver
 
           # Align to night in US. The second email will be a non-standard interval,
@@ -66,7 +73,7 @@ after_initialize {
       Excon.new("http://digests.506investorgroup.com:8081", headers: headers, expects: [200, 201])
     end
 
-    attr_accessor :since, :special_post
+    attr_accessor :since, :special_post, :favorite_post
 
     def initialize(user, connection = nil)
       @user = user
@@ -116,6 +123,10 @@ after_initialize {
 
       if @special_post
         result[:special_post] = fmt_post(@special_post)
+      end
+
+      if @favorite_post
+        result[:favorite_post] = fmt_post(@favorite_post)
       end
 
       result.to_json
