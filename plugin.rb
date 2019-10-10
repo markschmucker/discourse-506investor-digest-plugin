@@ -25,6 +25,8 @@ after_initialize {
         if (favorite_post_id > 0 && (favorite_post_id != special_post_id))
           favorite_post = Post.find_by(id: favorite_post_id)
         end
+        
+        favorite_posts = get_favorite_posts
 
         users.each do |user|
           custom_digest = CustomDigest.new(user, connection)
@@ -32,6 +34,8 @@ after_initialize {
           if user.last_digest_special_post != special_post_id
             custom_digest.special_post = special_post
           end
+          
+          # todo: use favorite_posts, not post. Need to format each and handle in webhook.
           
           if user.last_digest_favorite_post != favorite_post_id
             custom_digest.favorite_post = favorite_post
@@ -71,6 +75,30 @@ after_initialize {
 
       query.pluck(:id)
     end
+    
+    def get_favorite_posts
+      user = User.find_by_username('JohnDoe')
+      min_date = Time.now - (1 * 24 * 60 * 60)
+      
+      posts = Post
+          .order("posts.like_count DESC")
+          .for_mailing_list(user, min_date)
+          .where('posts.post_type = ?', Post.types[:regular])
+          .where('posts.deleted_at IS NULL AND posts.hidden = false AND posts.user_deleted = false')
+          .where("posts.post_number > ?", 1)
+          .where('posts.created_at < ?', (SiteSetting.editing_grace_period || 0).seconds.ago)
+          .limit(10)
+      
+      max_like_count = posts.map(|post| post.like_count).max
+      
+      favorite_posts = nil
+      if max_like_count > 4
+        favorite_posts = posts.select(|p| p.like_count == max_like_count)
+      end
+      
+      favorite_posts
+    end
+    
   end
 
   class ::CustomDigest
