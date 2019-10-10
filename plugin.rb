@@ -28,8 +28,15 @@ after_initialize {
 
         users.each do |user|
           custom_digest = CustomDigest.new(user, connection)
-          custom_digest.special_post = special_post
-          custom_digest.favorite_post = favorite_post
+          
+          if user.last_digest_special_post != special_post_id
+            custom_digest.special_post = special_post
+          end
+          
+          if user.last_digest_favorite_post != favorite_post_id
+            custom_digest.favorite_post = favorite_post
+          end
+          
           custom_digest.deliver
 
           # Align to night in US. The second email will be a non-standard interval,
@@ -39,6 +46,8 @@ after_initialize {
             lda = Time.new(lda.year, lda.month, lda.day, 8, 0, 0)
           end
           user.last_digest_at = lda
+          user.last_digest_special_post = special_post_id
+          user.last_digest_favorite_post = favorite_post_id
           user.save
 
           sleep 2
