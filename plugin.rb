@@ -22,7 +22,7 @@ after_initialize {
 
         favorite_post = nil
         favorite_post_id = SiteSetting.favorite_post.to_i
-        if favorite_post_id > 0
+        if (favorite_post_id > 0 && (favorite_post_id != special_post_id))
           favorite_post = Post.find_by(id: favorite_post_id)
         end
 
