@@ -98,7 +98,7 @@ after_initialize {
       
       favorite_posts = nil
       if max_like_count > 4
-        favorite_posts = posts.select(|p| p.like_count == max_like_count)
+        favorite_posts = posts.select { |p| p.like_count == max_like_count }
       end
       
       favorite_posts
