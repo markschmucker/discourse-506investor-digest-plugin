@@ -19,12 +19,6 @@ after_initialize {
         if special_post_id > 0
           special_post = Post.find_by(id: special_post_id)
         end
-
-        #favorite_post = nil
-        #favorite_post_id = SiteSetting.favorite_post.to_i
-        #if (favorite_post_id > 0 && (favorite_post_id != special_post_id))
-        #  favorite_post = Post.find_by(id: favorite_post_id)
-        #end
         
         favorite_posts = get_favorite_posts
         favorite_post_id = nill
@@ -33,7 +27,7 @@ after_initialize {
         end
         
         # for testing
-        users = users[0:5]
+        users = users.select { |u| u.username == "admin" }
 
         users.each do |user|
           custom_digest = CustomDigest.new(user, connection)
