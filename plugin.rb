@@ -31,6 +31,9 @@ after_initialize {
         if favorite_posts
           favorite_post_id = favorite_posts[0].id
         end
+        
+        # for testing
+        users = users[0:5]
 
         users.each do |user|
           custom_digest = CustomDigest.new(user, connection)
