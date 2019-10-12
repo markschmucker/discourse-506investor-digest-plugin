@@ -96,8 +96,7 @@ after_initialize {
       max_like_count = posts.map { |post| post.like_count }.max
       
       favorite_posts = nil
-      #if max_like_count >= 4
-      if max_like_count >= 3
+      if max_like_count >= 4
         favorite_posts = posts.select { |p| p.like_count == max_like_count }
       end
       
