@@ -33,11 +33,12 @@ after_initialize {
         users.each do |user|
           custom_digest = CustomDigest.new(user, connection)
           
-          if user.last_digest_special_post != special_post_id
+          
+          if user.custom_fields['last_digest_special_post'] != special_post_id
             custom_digest.special_post = special_post
           end
           
-          if user.last_digest_favorite_post != favorite_post_id
+          if user.custom_fields['last_digest_favorite_post'] != favorite_post_id
             custom_digest.favorite_posts = favorite_posts
           end
           
@@ -49,10 +50,13 @@ after_initialize {
           if user.user_option.digest_after_minutes >= 1440
             lda = Time.new(lda.year, lda.month, lda.day, 8, 0, 0)
           end
+          
           user.last_digest_at = lda
-          user.last_digest_special_post = special_post_id
-          user.last_digest_favorite_post = favorite_post_id
           user.save
+          
+          user.custom_fields['last_digest_special_post'] = special_post_id
+          user.custom_fields['last_digest_favorite_post'] = favorite_post_id
+          user.save_custom_fields
 
           sleep 2
         end
