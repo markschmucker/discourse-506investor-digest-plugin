@@ -1,7 +1,8 @@
 # name: custom-digest
 # about: Custom digest
-# authors: Muhlis Budi Cahyono (muhlisbc@gmail.com)
+# authors: Muhlis Budi Cahyono (muhlisbc@gmail.com) and Mark Schmucker
 # version: 0.1.2
+# url: https://github.com/markschmucker/discourse-506investor-digest-plugin
 
 after_initialize {
   class ::Jobs::EnqueueDigestEmails
