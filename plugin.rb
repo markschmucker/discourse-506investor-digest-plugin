@@ -22,7 +22,7 @@ after_initialize {
         end
         
         favorite_posts = get_favorite_posts
-        favorite_post_id = nill
+        favorite_post_id = nil
         if favorite_posts
           favorite_post_id = favorite_posts[0].id
         end
