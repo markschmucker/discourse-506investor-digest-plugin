@@ -34,11 +34,11 @@ after_initialize {
           custom_digest = CustomDigest.new(user, connection)
           
           
-          if user.custom_fields['last_digest_special_post'] != special_post_id
+          if user.custom_fields['last_digest_special_post'].to_i != special_post_id
             custom_digest.special_post = special_post
           end
           
-          if user.custom_fields['last_digest_favorite_post'] != favorite_post_id
+          if user.custom_fields['last_digest_favorite_post'].to_i != favorite_post_id
             custom_digest.favorite_posts = favorite_posts
           end
           
