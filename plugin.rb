@@ -28,7 +28,7 @@ after_initialize {
         end
         
         # for testing
-        users = users.select { |u| u.username == "admin" }
+        #users = users.select { |u| u.username == "admin" }
 
         users.each do |user|
           custom_digest = CustomDigest.new(user, connection)
