@@ -82,7 +82,7 @@ after_initialize {
     
     def get_favorite_posts
       user = User.find_by_username('JohnDoe')
-      min_date = Time.now - (1 * 24 * 60 * 60)
+      min_date = Time.now - (1 * 29 * 60 * 60)
       
       posts = Post
           .order("posts.like_count DESC")
