@@ -21,7 +21,9 @@ after_initialize {
           special_post = Post.find_by(id: special_post_id)
         end
         
-        favorite_posts = get_favorite_posts
+        # Rem'ing this to avoid new error April 2021
+        # favorite_posts = get_favorite_posts
+        favorite_posts = nill
         favorite_post_id = nil
         if favorite_posts
           favorite_post_id = favorite_posts[0].id
