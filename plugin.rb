@@ -81,7 +81,7 @@ after_initialize {
     end
     
     def get_favorite_posts
-      user = User.find_by_username('JohnDoe')
+      user = User.find_by_username('DoNotChangeMyUsername')
       min_date = Time.now - (1 * 29 * 60 * 60)
       
       posts = Post
