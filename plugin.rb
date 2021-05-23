@@ -15,20 +15,20 @@ after_initialize {
         
         connection = CustomDigest.create_connection
         
-        # special_post = nil
-        # special_post_id = SiteSetting.custom_digest_special_post.to_i
-        # if special_post_id > 0
-        #   special_post = Post.find_by(id: special_post_id)
-        # end
-        # Use admin's first bookmark as featured post
         special_post = nil
-        bookmark = Bookmark.find_by(user_id: 1)
-        if bookmark
-          special_post_id = bookmark.post_id.to_i
-          if special_post_id > 0
-            special_post = Post.find_by(id: special_post_id)
-          end
+        special_post_id = SiteSetting.custom_digest_special_post.to_i
+        if special_post_id > 0
+          special_post = Post.find_by(id: special_post_id)
         end
+        # Use admin's first bookmark as featured post
+        # special_post = nil
+        # bookmark = Bookmark.find_by(user_id: 1)
+        # if bookmark
+        #  special_post_id = bookmark.post_id.to_i
+        #  if special_post_id > 0
+        #    special_post = Post.find_by(id: special_post_id)
+        #  end
+        # end
         
         favorite_posts = get_favorite_posts
         favorite_post_id = nil
