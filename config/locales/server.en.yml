@@ -1,3 +1,3 @@
 en:
   site_settings:
-    custom_digest_special_post: "Post included in every JSON request (set 0 to disable)"
+    custom_digest_special_post: "Currently not using this setting- instead using admin's bookmarks. Old doc string: Post included in every JSON request (set 0 to disable)"
