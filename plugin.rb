@@ -103,7 +103,7 @@ after_initialize {
           .where("posts.like_count > ?", 5)
           .limit(5)
       
-      favorite_posts
+      posts
     end
     
   end
