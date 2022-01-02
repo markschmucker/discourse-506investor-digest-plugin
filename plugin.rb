@@ -100,14 +100,8 @@ after_initialize {
           .where('posts.deleted_at IS NULL AND posts.hidden = false AND posts.user_deleted = false')
           .where("posts.post_number > ?", 1)
           .where('posts.created_at < ?', (SiteSetting.editing_grace_period || 0).seconds.ago)
-          .limit(10)
-      
-      max_like_count = posts.map { |post| post.like_count }.max
-      
-      favorite_posts = nil
-      if max_like_count >= 4
-        favorite_posts = posts.select { |p| p.like_count == max_like_count }
-      end
+          .where("posts.like_count > ?", 5)
+          .limit(5)
       
       favorite_posts
     end
