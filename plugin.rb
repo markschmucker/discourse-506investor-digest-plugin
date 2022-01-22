@@ -20,15 +20,6 @@ after_initialize {
         if special_post_id > 0
           special_post = Post.find_by(id: special_post_id)
         end
-        # Use admin's first bookmark as featured post
-        # special_post = nil
-        # bookmark = Bookmark.find_by(user_id: 1)
-        # if bookmark
-        #  special_post_id = bookmark.post_id.to_i
-        #  if special_post_id > 0
-        #    special_post = Post.find_by(id: special_post_id)
-        #  end
-        # end
         
         favorite_posts = get_favorite_posts
         favorite_post_id = nil
@@ -36,12 +27,8 @@ after_initialize {
           favorite_post_id = favorite_posts[0].id
         end
         
-        # for testing
-        #users = users.select { |u| u.username == "admin" }
-
         users.each do |user|
           custom_digest = CustomDigest.new(user, connection)
-          
           
           if user.custom_fields['last_digest_special_post'].to_i != special_post_id
             custom_digest.special_post = special_post
