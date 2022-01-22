@@ -164,13 +164,15 @@ after_initialize {
     end
 
     def fmt_post(post)
+      topic_title = Topic.find(post.topic_id).fancy_title
       {
         username: post.user.username,
         url: post.full_url,
         avatar: post.user.small_avatar_url,
         timestamp: post.created_at.iso8601,
         raw: post.raw,
-        cooked: post.cooked
+        cooked: post.cooked,
+        topic_title: topic_title
       }
     end
   end
