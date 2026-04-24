@@ -14,7 +14,8 @@ after_initialize {
         return if users.blank?
         
         connection = CustomDigest.create_connection
-        
+        preview_connection = CustomDigest.create_preview_connection
+
         special_post = nil
         special_post_id = SiteSetting.custom_digest_special_post.to_i
         if special_post_id > 0
@@ -28,7 +29,7 @@ after_initialize {
         end
         
         users.each do |user|
-          custom_digest = CustomDigest.new(user, connection)
+          custom_digest = CustomDigest.new(user, connection, preview_connection)
           
           if user.custom_fields['last_digest_special_post'].to_i != special_post_id
             custom_digest.special_post = special_post
@@ -96,24 +97,48 @@ after_initialize {
   end
 
   class ::CustomDigest
-    def self.create_connection
-      headers = {
-        "Content-Type" => "application/json"
-      }
+    STAFF_EMAILS = %w[
+      markschmucker@yahoo.com
+      andrewgoldberg@gmail.com
+      robert.fakheri@gmail.com
+      dan.rudolph@live.com
+      danchang99@gmail.com
+      mhr.uncgolf@gmail.com
+    ].freeze
 
-      Excon.new("http://digests.506investorgroup.com:8081", headers: headers, expects: [200, 201])
+    PREVIEW_ENDPOINT = "https://deploy-preview-22--506group.netlify.app"
+    PREVIEW_PATH     = "/.netlify/functions/digest-webhook"
+
+    def self.create_connection
+      Excon.new("http://digests.506investorgroup.com:8081",
+        headers: { "Content-Type" => "application/json" },
+        expects: [200, 201])
+    end
+
+    def self.create_preview_connection
+      Excon.new(PREVIEW_ENDPOINT,
+        headers: { "Content-Type" => "application/json" },
+        expects: [200, 201])
     end
 
     attr_accessor :since, :special_post, :favorite_posts
 
-    def initialize(user, connection = nil)
+    def initialize(user, connection = nil, preview_connection = nil)
       @user = user
       @connection = connection || CustomDigest.create_connection
+      @preview_connection = preview_connection
       @since = Time.now - (@user.user_option.digest_after_minutes * 60)
     end
 
     def deliver
       @connection.post(path: "/", body: json)
+      if @preview_connection && STAFF_EMAILS.include?(@user.email)
+        begin
+          @preview_connection.post(path: PREVIEW_PATH, body: json)
+        rescue => e
+          Rails.logger.warn("custom-digest preview delivery failed for #{@user.email}: #{e.message}")
+        end
+      end
     end
 
     def activity
