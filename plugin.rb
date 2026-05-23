@@ -12,8 +12,6 @@ after_initialize {
       DistributedMutex.synchronize("custom_digest", validity: 180.minutes) {
         users = User.where(id: target_user_ids)
         return if users.blank?
-        
-        connection = CustomDigest.create_connection
 
         special_post = nil
         special_post_id = SiteSetting.custom_digest_special_post.to_i
@@ -28,31 +26,41 @@ after_initialize {
         end
         
         users.each do |user|
-          custom_digest = CustomDigest.new(user, connection)
-          
-          if user.custom_fields['last_digest_special_post'].to_i != special_post_id
-            custom_digest.special_post = special_post
-          end
-          
-          if user.custom_fields['last_digest_favorite_post'].to_i != favorite_post_id
-            custom_digest.favorite_posts = favorite_posts
-          end
-          
-          custom_digest.deliver
+          begin
+            # Each user gets a fresh Excon connection. Sharing a single connection
+            # across the batch caused 502s mid-loop once Cloudflare/Netlify's edge
+            # closed the keep-alive — every subsequent user POSTed onto a degraded
+            # socket and got rejected at the gateway.
+            custom_digest = CustomDigest.new(user)
 
-          # Align to night in US. The second email will be a non-standard interval,
-          # but will remain standard after that. 10:00 is 7:30 pm ASP.
-          lda = Time.now
-          if user.user_option.digest_after_minutes >= 1440
-            lda = Time.new(lda.year, lda.month, lda.day, 10, 0, 0)
+            if user.custom_fields['last_digest_special_post'].to_i != special_post_id
+              custom_digest.special_post = special_post
+            end
+
+            if user.custom_fields['last_digest_favorite_post'].to_i != favorite_post_id
+              custom_digest.favorite_posts = favorite_posts
+            end
+
+            custom_digest.deliver
+
+            # Align to night in US. The second email will be a non-standard interval,
+            # but will remain standard after that. 10:00 is 7:30 pm ASP.
+            lda = Time.now
+            if user.user_option.digest_after_minutes >= 1440
+              lda = Time.new(lda.year, lda.month, lda.day, 10, 0, 0)
+            end
+
+            user.last_digest_at = lda
+            user.save
+
+            user.custom_fields['last_digest_special_post'] = special_post_id
+            user.custom_fields['last_digest_favorite_post'] = favorite_post_id
+            user.save_custom_fields
+          rescue => e
+            # Isolate per-user failures so one bad user doesn't abort the batch.
+            # last_digest_at is left untouched, so the user is retried next run.
+            Discourse.warn_exception(e, message: "custom-digest failed for #{user.username}")
           end
-          
-          user.last_digest_at = lda
-          user.save
-          
-          user.custom_fields['last_digest_special_post'] = special_post_id
-          user.custom_fields['last_digest_favorite_post'] = favorite_post_id
-          user.save_custom_fields
 
           sleep 2
         end
