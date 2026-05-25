@@ -115,10 +115,18 @@ after_initialize {
 
     attr_accessor :since, :special_post, :favorite_posts
 
+    # Hard cap on how far back the digest looks, regardless of the user's
+    # digest_after_minutes preference. Discourse added very long intervals
+    # (3 months, 6 months) that this plugin can't sanely produce a single
+    # email for — the activity query would pull most of the forum.
+    MAX_WINDOW = 7.days
+
     def initialize(user, connection = nil)
       @user = user
       @connection = connection || CustomDigest.create_connection
-      @since = Time.now - (@user.user_option.digest_after_minutes * 60)
+      pref_since = Time.now - (@user.user_option.digest_after_minutes * 60)
+      cap_since  = Time.now - MAX_WINDOW
+      @since = [pref_since, cap_since].max
     end
 
     def deliver
@@ -126,29 +134,44 @@ after_initialize {
     end
 
     def activity
-      #@since ||= (@user.last_emailed_at || 1.month.ago)
-
-      topics = Topic
+      # 1) Find topic IDs the user is eligible to see with at least one post
+      #    in the @since window. Do NOT use includes(:posts) here — that would
+      #    preload every post of every topic (potentially thousands), which
+      #    was the root of the per-user hang for users with wide windows.
+      topic_ids = Topic
         .joins(:posts)
-        .includes(:posts)
         .for_digest(@user, 100.years.ago)
         .where("posts.created_at > ?", @since)
+        .distinct
+        .pluck(:id)
 
+      return [] if topic_ids.empty?
+
+      # 2) Bulk-fetch only the posts within the window, with their authors
+      #    and topics eager-loaded. One query, no N+1 in fmt_post.
+      post_scope = Post
+        .where(topic_id: topic_ids)
+        .where("created_at > ?", @since)
       unless @user.staff?
-        topics = topics.where("posts.post_type <> ?", Post.types[:whisper])
+        post_scope = post_scope.where("post_type <> ?", Post.types[:whisper])
       end
+      recent_posts = post_scope.includes(:user, :topic).to_a
+      posts_by_topic = recent_posts.group_by(&:topic_id)
 
-      topics.uniq.map do |t|
+      # 3) Build the per-topic structures from windowed posts only.
+      Topic.where(id: posts_by_topic.keys).includes(:category, :tags).map do |t|
+        posts = posts_by_topic[t.id] || []
+        next if posts.empty?
         {
           topic_name: t.title,
           topic_url: t.url,
           topic_emblem_or_color: t.category.color,
           topic_categories: [t.category.parent_category&.name, t.category.name].compact,
-          topic_tags: t.tags.pluck(:name),
+          topic_tags: t.tags.map(&:name),
           slug: t.slug,
-          posts: t.posts.map { | post| fmt_post(post) }
+          posts: posts.map { |post| fmt_post(post) }
         }
-      end
+      end.compact
     end
 
     def json
@@ -173,7 +196,10 @@ after_initialize {
     end
 
     def fmt_post(post)
-      topic_title = Topic.find(post.topic_id).fancy_title
+      # Use the preloaded association when available (activity loop). Falls
+      # back to a single lazy query for special_post / favorite_posts, which
+      # are at most a handful.
+      topic_title = post.topic.fancy_title
       {
         username: post.user.username,
         url: post.full_url,
