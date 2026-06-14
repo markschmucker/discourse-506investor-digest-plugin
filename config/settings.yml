@@ -1,3 +1,9 @@
 plugins:
+  custom_digest_enabled:
+    default: true
   custom_digest_special_post:
     default: 0
+  custom_digest_webhook_secret:
+    default: ""
+    secret: true
+    client: false

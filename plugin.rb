@@ -1,12 +1,14 @@
 # name: custom-digest
 # about: Custom digest
 # authors: Muhlis Budi Cahyono (muhlisbc@gmail.com) and Mark Schmucker
-# version: 0.1.2
+# version: 0.1.3
 # url: https://github.com/markschmucker/discourse-506investor-digest-plugin
+# enabled_site_setting: custom_digest_enabled
 
 after_initialize {
   class ::Jobs::EnqueueDigestEmails
     def execute(args)
+      return unless SiteSetting.custom_digest_enabled
       return if SiteSetting.disable_digest_emails? || SiteSetting.private_email?
 
       DistributedMutex.synchronize("custom_digest", validity: 180.minutes) {
@@ -109,7 +111,10 @@ after_initialize {
 
     def self.create_connection
       Excon.new(ENDPOINT,
-        headers: { "Content-Type" => "application/json" },
+        headers: {
+          "Content-Type"     => "application/json",
+          "x-webhook-secret" => SiteSetting.custom_digest_webhook_secret,
+        },
         expects: [200, 201])
     end
 
